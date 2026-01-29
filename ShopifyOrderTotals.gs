@@ -8,12 +8,17 @@
 // ==========================================
 
 // Am redenumit CONFIG in SHOPIFY_CONFIG
-const SHOPIFY_CONFIG = {
+// ==========================================
+// 1. CONFIGURATION (SHOPIFY SPECIFIC)
+// ==========================================
+
+// Initialise defaults - values will be overwritten by fetchConfigFromSheet()
+let SHOPIFY_CONFIG = {
   // Your myshopify domain
-  domain: '.myshopify.c0om', 
+  domain: '', 
   
   // Your Admin API Access Token
-  accessToken: 'shpb15304c44d63457', 
+  accessToken: '', 
   
   // How many days back to look?
   timeframeDays: 30, 
@@ -30,6 +35,21 @@ const SHOPIFY_SHEET_NAME = "ShopifyOrdersTotal";
 // ==========================================
 
 function runOrderTotalCalculator() {
+  // 0. Load Configuration
+  try {
+    const config = fetchConfigFromSheet();
+    if (config.shopifyDomain) SHOPIFY_CONFIG.domain = config.shopifyDomain;
+    if (config.shopifyAPIkey) SHOPIFY_CONFIG.accessToken = config.shopifyAPIkey;
+    
+    // Validare
+    if (!SHOPIFY_CONFIG.domain || !SHOPIFY_CONFIG.accessToken) {
+       throw new Error("Missing Shopify credentials in Config sheet (shopifyDomain or shopifyAPIkey).");
+    }
+  } catch (e) {
+    Logger.log(`[Shopify] Config Error: ${e.message}`);
+    return;
+  }
+
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   
   // 1. Calculate Timeframe

@@ -7,12 +7,12 @@
 // 1. CONFIGURARE GOMAG
 // ==========================================
 
-const GOMAG_CONFIG = {
+let GOMAG_CONFIG = {
   // URL-ul magazinului (fără slash la final)
-  shopUrl: 'https://www.mt.ro', 
+  shopUrl: '', 
   
   // Cheia API
-  apiKey: '6e15b5ec0db4d50efc9ebe6', 
+  apiKey: '', 
   
   // Perioada de analiză
   timeframeDays: 30,
@@ -33,6 +33,22 @@ const GOMAG_SHEET_NAME = "GomagOrderTotals";
 // ==========================================
 
 function runGomagOrderCalculator() {
+  // 0. Load Configuration
+  try {
+    const config = fetchConfigFromSheet();
+    if (config.gomagDomain) GOMAG_CONFIG.shopUrl = config.gomagDomain;
+    if (config.gomagAPIkey) GOMAG_CONFIG.apiKey = config.gomagAPIkey;
+
+    // Validare
+    if (!GOMAG_CONFIG.shopUrl || !GOMAG_CONFIG.apiKey) {
+       throw new Error("Missing Gomag credentials in Config sheet (gomagDomain or gomagAPIkey).");
+    }
+
+  } catch (e) {
+    Logger.log(`[Gomag] Config Error: ${e.message}`);
+    return;
+  }
+
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   
   const endDate = new Date();
