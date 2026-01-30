@@ -208,6 +208,16 @@ function fetchGomagOrdersForExport_(startDate) {
   let page = 1;
   let keepFetching = true;
 
+  const options = {
+    method: 'get',
+    muteHttpExceptions: true,
+    headers: {
+      'Apikey': GOMAG_EXPORT_CONFIG.apiKey,
+      'ApiShop': GOMAG_EXPORT_CONFIG.shopUrl,
+      'Content-Type': 'application/json'
+    }
+  };
+
   while (keepFetching) {
     // We need more details than a simple list, but the '/read/json' endpoint usually returns full objects or a summary.
     // Gomag API usually returns full order objects in the list.
