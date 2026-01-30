@@ -27,6 +27,13 @@ function runGomagOrderExport() {
     if (config.gomagDomain) GOMAG_EXPORT_CONFIG.shopUrl = config.gomagDomain;
     if (config.gomagAPIkey) GOMAG_EXPORT_CONFIG.apiKey = config.gomagAPIkey;
     
+    if (config.Days) {
+      const days = parseInt(config.Days);
+      if (!isNaN(days) && days > 0) {
+        GOMAG_EXPORT_CONFIG.timeframeDays = days;
+      }
+    }
+    
     // Validation
     if (!GOMAG_EXPORT_CONFIG.shopUrl || !GOMAG_EXPORT_CONFIG.apiKey) {
        throw new Error("Missing Gomag credentials in Config sheet.");
@@ -71,17 +78,7 @@ function runGomagOrderExport() {
 // 3. DATA PROCESSING
 // ==========================================
 
-// Flag for debug logging (only log once per execution)
-let DEBUG_LOGGED = false;
-
 function processGomagOrderForExport_(order) {
-  // --- DEBUG SECTION ---
-  if (!DEBUG_LOGGED) {
-    Logger.log("[DEBUG STRUCTURE] Order Keys: " + Object.keys(order).join(", "));
-    DEBUG_LOGGED = true;
-  }
-  // ---------------------
-
   // 1. Date
   const dateStr = order.date || order.created_at || "";
   const date = dateStr ? new Date(dateStr) : "";
@@ -108,8 +105,12 @@ function processGomagOrderForExport_(order) {
   
   // If not at root, check inside 'shipping' object
   if (!shipRaw && order.shipping && typeof order.shipping === 'object') {
-     // Log shipping keys for debug if needed
-     // Logger.log("[DEBUG SHIPPING] Keys: " + Object.keys(order.shipping).join(", "));
+     // Logging for debugging shipping structure
+     // if (!DEBUG_LOGGED) { // utilizing existing flag if possible, or just log first non-null
+     //   Logger.log("[DEBUG SHIPPING OBJ]: " + JSON.stringify(order.shipping));
+     // }
+      Logger.log("[DEBUG SHIPPING OBJ]: " + JSON.stringify(order.shipping)); // Always log for now (or throttle)
+     
      shipRaw = order.shipping.value || order.shipping.amount || order.shipping.cost || order.shipping.total || order.shipping.price;
   }
   

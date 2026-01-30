@@ -28,6 +28,13 @@ function runShopifyOrderExport() {
     if (config.shopifyDomain) SHOPIFY_EXPORT_CONFIG.domain = config.shopifyDomain;
     if (config.shopifyAPIkey) SHOPIFY_EXPORT_CONFIG.accessToken = config.shopifyAPIkey;
     
+    if (config.Days) {
+      const days = parseInt(config.Days);
+      if (!isNaN(days) && days > 0) {
+        SHOPIFY_EXPORT_CONFIG.timeframeDays = days;
+      }
+    }
+    
     // Validation
     if (!SHOPIFY_EXPORT_CONFIG.domain || !SHOPIFY_EXPORT_CONFIG.accessToken) {
        throw new Error("Missing Shopify credentials in Config sheet.");
