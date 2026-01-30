@@ -1,0 +1,92 @@
+/**
+ * @file Utilities.gs
+ * @description Shared utility functions for orders data processing.
+ */
+
+// ==========================================
+// API HELPERS
+// ==========================================
+
+/**
+ * Fetches a URL with retry logic for 429 errors and transient failures.
+ * @param {string} url - The URL to fetch.
+ * @param {Object} options - UrlFetchApp options.
+ * @returns {Object|null} Parsed JSON response or null on failure/error.
+ */
+function fetchUrlWithRetry(url, options) {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const response = UrlFetchApp.fetch(url, options);
+      const code = response.getResponseCode();
+      const contentText = response.getContentText();
+      
+      if (code >= 200 && code < 300) {
+        return JSON.parse(contentText);
+      } else if (code === 429) {
+        const retryAfter = response.getHeaders()['Retry-After'] || 5;
+        Logger.log(`[API] Rate limit hit. Sleeping for ${retryAfter}s...`);
+        Utilities.sleep(parseInt(retryAfter) * 1000);
+        continue;
+      } else {
+        Logger.log(`[API ERROR] Code: ${code}. Response: ${contentText}`);
+        // For 4xx/5xx errors that aren't 429, we likely shouldn't retry instantly without checking, 
+        // but for now we follow the improved pattern of logging and returning null or re-throwing if needed.
+        // We'll throw to let the caller decide or just return null. 
+        // Returning null allows the loop to continue or break gracefully.
+        return null; 
+      }
+    } catch (e) {
+      if (i === 2) {
+        Logger.log(`[FETCH ERROR] ${e.message}`);
+        // throw e; // Uncomment if we want to bubble up the error instead of returning null
+        return null;
+      }
+      Utilities.sleep(2000);
+    }
+  }
+  return null;
+}
+
+// ==========================================
+// SHEET HELPERS
+// ==========================================
+
+/**
+ * Writes data to a specified sheet, creating it if necessary and clearing old data.
+ * @param {Spreadsheet} spreadsheet - The Google Spreadsheet object.
+ * @param {string} sheetName - The name of the sheet to write to.
+ * @param {Array<string>} headers - Array of header names.
+ * @param {Array<Array>} rows - 2D array of data rows.
+ */
+function writeParamsToSheet(spreadsheet, sheetName, headers, rows) {
+  let sheet = spreadsheet.getSheetByName(sheetName);
+  
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+  } else {
+    sheet.clear(); 
+  }
+
+  // Write Headers
+  // Light green background #d9ead3 is typical for these reports
+  sheet.getRange(1, 1, 1, headers.length)
+       .setValues([headers])
+       .setFontWeight("bold")
+       .setBackground("#d9ead3");
+
+  if (rows && rows.length > 0) {
+    // Write Data
+    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+    
+    // Auto-detect numeric columns for simple formatting if needed, 
+    // but typically we can format specific known columns from the caller or just leave as auto.
+    // Here we'll apply a standard number format to potential numeric columns (Value, Shipping, Revenue)
+    // assuming they are generally in columns 3, 4, 5 based on current usage.
+    // To be safer, we could just format the whole data range as needed.
+    
+    // Auto-resize
+    sheet.autoResizeColumns(1, headers.length);
+  } else {
+    Logger.log(`[Sheet] No data rows to write for ${sheetName}.`);
+  }
+}

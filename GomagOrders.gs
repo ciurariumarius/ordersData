@@ -65,7 +65,14 @@ function runGomagOrderExport() {
     Logger.log(`[GomagExport] Processed ${processedRows.length} orders.`);
 
     // 5. Write to Sheet
-    writeGomagExportToSheet_(spreadsheet, processedRows);
+    const headers = ["Date", "Transaction ID", "Value", "Shipping", "Items Revenue", "Product IDs", "Status"];
+    writeParamsToSheet(spreadsheet, GOMAG_EXPORT_SHEET_NAME, headers, processedRows);
+
+    // Format numeric columns specific to this report
+    const sheet = spreadsheet.getSheetByName(GOMAG_EXPORT_SHEET_NAME);
+    if (sheet && processedRows.length > 0) {
+      sheet.getRange(2, 3, processedRows.length, 3).setNumberFormat("#,##0.00");
+    }
 
   } catch (e) {
     Logger.log(`[GomagExport] ERROR: ${e.message}`);
@@ -190,27 +197,7 @@ function processGomagOrderForExport_(order) {
 // 4. API & SHEET HELPERS
 // ==========================================
 
-function writeGomagExportToSheet_(spreadsheet, rows) {
-  let sheet = spreadsheet.getSheetByName(GOMAG_EXPORT_SHEET_NAME);
-  
-  if (!sheet) {
-    sheet = spreadsheet.insertSheet(GOMAG_EXPORT_SHEET_NAME);
-  } else {
-    sheet.clear(); 
-  }
-
-  const headers = ["Date", "ID tranzactie", "Value", "Transport", "Venituri items", "ID products", "Status"];
-  
-  sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight("bold").setBackground("#d9ead3");
-
-  if (rows.length > 0) {
-    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
-    // Format numeric columns
-    sheet.getRange(2, 3, rows.length, 3).setNumberFormat("#,##0.00"); // Value, Transport, Venituri items
-  }
-  
-  sheet.autoResizeColumns(1, headers.length);
-}
+// DELETED: writeGomagExportToSheet_ is replaced by Utilities.writeParamsToSheet
 
 // ==========================================
 // 5. CORE ENGINE (PAGINATION)
@@ -228,7 +215,8 @@ function fetchGomagOrdersForExport_(startDate) {
     
     Logger.log(`[GomagExport] Fetching page ${page}...`);
     
-    const response = fetchGomagUrlExport_(url);
+    
+    const response = fetchUrlWithRetry(url, options);
 
     if (!response) {
       Logger.log("[GomagExport] Null response. Stopping.");
@@ -292,39 +280,4 @@ function fetchGomagOrdersForExport_(startDate) {
   return { orders: allOrders };
 }
 
-function fetchGomagUrlExport_(url) {
-  const options = {
-    method: 'get',
-    muteHttpExceptions: true,
-    headers: {
-      'Apikey': GOMAG_EXPORT_CONFIG.apiKey,
-      'ApiShop': GOMAG_EXPORT_CONFIG.shopUrl,
-      'Content-Type': 'application/json'
-    }
-  };
-
-  for (let i = 0; i < 3; i++) {
-    try {
-      const response = UrlFetchApp.fetch(url, options);
-      const code = response.getResponseCode();
-      const contentText = response.getContentText();
-      
-      if (code === 200) {
-        return JSON.parse(contentText);
-      } else if (code === 429) {
-        Utilities.sleep(5000);
-        continue;
-      } else {
-        Logger.log(`[Exports API ERROR] Code: ${code}. Response: ${contentText}`);
-        return null; 
-      }
-    } catch (e) {
-      if (i === 2) {
-        Logger.log(`[Exports FETCH ERROR] ${e.message}`);
-        return null;
-      }
-      Utilities.sleep(2000);
-    }
-  }
-  return null;
-}
+// DELETED: fetchGomagUrlExport_ is replaced by Utilities.fetchUrlWithRetry
