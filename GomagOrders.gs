@@ -105,15 +105,12 @@ function processGomagOrderForExport_(order) {
   
   // If not at root, check 'delivery' object (common for cost/method)
   if (!shipRaw && order.delivery && typeof order.delivery === 'object') {
-     // Debug logging for delivery object
-      Logger.log("[DEBUG DELIVERY OBJ]: " + JSON.stringify(order.delivery)); 
-     
-     shipRaw = order.delivery.price || order.delivery.value || order.delivery.amount || order.delivery.cost;
+     shipRaw = order.delivery.total || order.delivery.price || order.delivery.value || order.delivery.amount || order.delivery.cost;
   }
   
-  // Fallback: Check 'shipping' object just in case (though log showed it was address)
+  // Fallback: Check 'shipping' object just in case
   if (!shipRaw && order.shipping && typeof order.shipping === 'object') {
-     shipRaw = order.shipping.value || order.shipping.amount || order.shipping.cost || order.shipping.price;
+     shipRaw = order.shipping.total || order.shipping.value || order.shipping.amount || order.shipping.cost || order.shipping.price;
   }
   
   if (shipRaw) {
