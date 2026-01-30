@@ -103,15 +103,17 @@ function processGomagOrderForExport_(order) {
   // Check 'shipping_value', 'shipping_amount', 'shipping_total' at root
   let shipRaw = order.shipping_value || order.shipping_amount || order.shipping_total;
   
-  // If not at root, check inside 'shipping' object
-  if (!shipRaw && order.shipping && typeof order.shipping === 'object') {
-     // Logging for debugging shipping structure
-     // if (!DEBUG_LOGGED) { // utilizing existing flag if possible, or just log first non-null
-     //   Logger.log("[DEBUG SHIPPING OBJ]: " + JSON.stringify(order.shipping));
-     // }
-      Logger.log("[DEBUG SHIPPING OBJ]: " + JSON.stringify(order.shipping)); // Always log for now (or throttle)
+  // If not at root, check 'delivery' object (common for cost/method)
+  if (!shipRaw && order.delivery && typeof order.delivery === 'object') {
+     // Debug logging for delivery object
+      Logger.log("[DEBUG DELIVERY OBJ]: " + JSON.stringify(order.delivery)); 
      
-     shipRaw = order.shipping.value || order.shipping.amount || order.shipping.cost || order.shipping.total || order.shipping.price;
+     shipRaw = order.delivery.price || order.delivery.value || order.delivery.amount || order.delivery.cost;
+  }
+  
+  // Fallback: Check 'shipping' object just in case (though log showed it was address)
+  if (!shipRaw && order.shipping && typeof order.shipping === 'object') {
+     shipRaw = order.shipping.value || order.shipping.amount || order.shipping.cost || order.shipping.price;
   }
   
   if (shipRaw) {
