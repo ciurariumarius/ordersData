@@ -103,8 +103,16 @@ function processGomagOrderForExport_(order) {
   
   // 4. Transport (Shipping)
   let transport = 0;
-  // Check 'shipping_value', 'shipping_amount', 'shipping_total'
+  // Check 'shipping_value', 'shipping_amount', 'shipping_total' at root
   let shipRaw = order.shipping_value || order.shipping_amount || order.shipping_total;
+  
+  // If not at root, check inside 'shipping' object
+  if (!shipRaw && order.shipping && typeof order.shipping === 'object') {
+     // Log shipping keys for debug if needed
+     // Logger.log("[DEBUG SHIPPING] Keys: " + Object.keys(order.shipping).join(", "));
+     shipRaw = order.shipping.value || order.shipping.amount || order.shipping.cost || order.shipping.total || order.shipping.price;
+  }
+  
   if (shipRaw) {
      if (typeof shipRaw === 'string') {
           shipRaw = shipRaw.replace(/[^0-9.-]+/g,"");
