@@ -71,18 +71,29 @@ function runGomagOrderExport() {
 // 3. DATA PROCESSING
 // ==========================================
 
+// Flag for debug logging (only log once per execution)
+let DEBUG_LOGGED = false;
+
 function processGomagOrderForExport_(order) {
+  // --- DEBUG SECTION ---
+  if (!DEBUG_LOGGED) {
+    Logger.log("[DEBUG STRUCTURE] Order Keys: " + Object.keys(order).join(", "));
+    DEBUG_LOGGED = true;
+  }
+  // ---------------------
+
   // 1. Date
-  const dateStr = order.date;
+  const dateStr = order.date || order.created_at || "";
   const date = dateStr ? new Date(dateStr) : "";
   
   // 2. ID tranzactie
-  const transactionId = order.id || "";
+  const transactionId = order.id || order.increment_id || "";
   
   // 3. Value (Total Price)
   let value = 0;
-  if (order.total) {
-    let priceRaw = order.total;
+  // Check 'total', 'grand_total'
+  let priceRaw = order.total || order.grand_total; 
+  if (priceRaw) {
      if (typeof priceRaw === 'string') {
           priceRaw = priceRaw.replace(/[^0-9.-]+/g,"");
       }
@@ -92,8 +103,9 @@ function processGomagOrderForExport_(order) {
   
   // 4. Transport (Shipping)
   let transport = 0;
-  if (order.shipping_value) {
-     let shipRaw = order.shipping_value;
+  // Check 'shipping_value', 'shipping_amount', 'shipping_total'
+  let shipRaw = order.shipping_value || order.shipping_amount || order.shipping_total;
+  if (shipRaw) {
      if (typeof shipRaw === 'string') {
           shipRaw = shipRaw.replace(/[^0-9.-]+/g,"");
       }
@@ -101,46 +113,58 @@ function processGomagOrderForExport_(order) {
       if (isNaN(transport)) transport = 0;
   }
 
-  // 5. Venituri items (Sum of price * quantity)
+  // 5. Venituri items & 6. ID products
   let itemsRevenue = 0;
   let productIds = [];
   
-  // Gomag returns 'products' as an array for items
-  // Sometimes it can be an object with numeric keys, careful handling needed similar to fetch logic if API varies,
-  // but typically 'products' inside an order object is an array in the standard V1 response.
-  let items = order.products || [];
+  // Try to find the item list in various common fields
+  let items = order.products || order.items || order.line_items || order.lines || (order.details ? order.details.products : null);
   
-  // Normalize if it's an object acting as array
-  if (!Array.isArray(items) && typeof items === 'object') {
+  // Normalize object-as-list
+  if (items && !Array.isArray(items) && typeof items === 'object') {
      items = Object.values(items);
   }
 
-  if (Array.isArray(items)) {
+  if (Array.isArray(items) && items.length > 0) {
     items.forEach(item => {
+      // DEBUG: Log item structure for the first valid item found
+      // if (productIds.length === 0 && DEBUG_LOGGED) { 
+      //    Logger.log("[DEBUG ITEM] Item Keys: " + Object.keys(item).join(", "));
+      // }
+
       let price = 0;
-      if (item.price) { // Assuming 'price' is the unit price field
-          let pRaw = item.price;
+      // Check 'price', 'unit_price', 'value'
+      let pRaw = item.price || item.unit_price || item.value;
+      if (pRaw) {
           if (typeof pRaw === 'string') pRaw = pRaw.replace(/[^0-9.-]+/g,"");
           price = parseFloat(pRaw) || 0;
       }
 
       let quantity = 0;
-      if (item.quantity) {
-          quantity = parseInt(item.quantity) || 0;
+      // Check 'quantity', 'qty', 'count'
+      let qRaw = item.quantity || item.qty || item.count || item.pieces;
+      if (qRaw) {
+          quantity = parseInt(qRaw) || 0;
       }
       
       itemsRevenue += (price * quantity);
       
+      // Check ID fields: 'id', 'product_id', 'code', 'sku'
       if (item.id) productIds.push(item.id);
+      else if (item.product_id) productIds.push(item.product_id);
       else if (item.code) productIds.push(item.code);
+      else if (item.sku) productIds.push(item.sku);
     });
+  } else {
+    // Log warning only if it's not a status-only update or similar partial object
+    // Logger.log(`[DEBUG] No items found for order ${transactionId}`);
   }
   
   // 6. ID products (Joined string)
   const productsIdStr = productIds.join(", ");
   
   // 7. Status
-  const status = order.status || "";
+  const status = order.status || order.state || "";
 
   // Return row order: Date | ID tranzactie | Value | Transport | Venituri items | ID products | Status
   return [
