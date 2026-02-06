@@ -115,13 +115,13 @@ function processWooOrderForExport_(order) {
   
   if (order.line_items && Array.isArray(order.line_items)) {
     order.line_items.forEach(item => {
-      // item.total is the line total (quantity * price), usually excluding tax
-      // To be safe and consistent with logic "price * quantity":
-      const price = parseFloat(item.price) || 0;
-      const quantity = parseInt(item.quantity) || 0;
+      // item.subtotal is line total before discounts.
+      // item.subtotal_tax is tax on that subtotal.
+      // User requested to include tax.
+      const lineSubtotal = parseFloat(item.subtotal) || 0;
+      const lineSubtotalTax = parseFloat(item.subtotal_tax) || 0;
       
-      // We'll use the calculated one to match previous logic
-      itemsRevenue += (price * quantity);
+      itemsRevenue += (lineSubtotal + lineSubtotalTax);
       
       if (item.product_id) {
         productIds.push(item.product_id);
