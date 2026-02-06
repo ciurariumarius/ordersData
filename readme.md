@@ -35,8 +35,7 @@ Add the following key-value pairs in **Column A** and **Column B**:
 
 ### 2. Script Files
 Ensure the following files are present in your Apps Script project:
-- `Config.gs`: Handles reading the configuration.
-- `Utilities.gs`: Shared helper functions for API requests and Sheet operations.
+- `Common.gs`: Shared configuration and utility functions.
 - `ShopifyOrders.gs`: Logic for Shopify exports.
 - `GomagOrders.gs`: Logic for Gomag exports.
 - `WooCommerceOrders.gs`: Logic for WooCommerce exports.
