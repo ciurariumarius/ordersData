@@ -95,10 +95,23 @@ function processOrderForExport_(order) {
   
   // 4. Transport (Shipping)
   let transport = 0;
+  // Priority 1: total_shipping_price_set (Modern, includes tax/discounts properly)
   if (order.total_shipping_price_set && 
       order.total_shipping_price_set.shop_money && 
       order.total_shipping_price_set.shop_money.amount) {
     transport = parseFloat(order.total_shipping_price_set.shop_money.amount);
+  } 
+  // Priority 2: total_shipping_price (Legacy field)
+  else if (order.total_shipping_price) {
+    transport = parseFloat(order.total_shipping_price);
+  }
+  // Priority 3: Sum of shipping_lines (Manual fallback)
+  else if (order.shipping_lines && Array.isArray(order.shipping_lines)) {
+    order.shipping_lines.forEach(line => {
+      // Use discounted_price if available, else price
+      let linePrice = line.discounted_price || line.price;
+      transport += parseFloat(linePrice) || 0;
+    });
   }
 
   // 5. Venituri items (Sum of price * quantity)
