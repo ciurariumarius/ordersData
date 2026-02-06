@@ -44,7 +44,12 @@ function fetchConfigFromSheet() {
   });
 
   // Basic validation
-  const requiredKeys = ['shopifyDomain', 'shopifyAPIkey', 'gomagDomain', 'gomagAPIkey'];
+  // Note: We check for keys, but scripts should handle missing specific keys gracefully if only one platform is used.
+  // Actually, forcing all might annoy users who only use one. 
+  // Better approach: Log warnings for missing keys but don't crash Config unless empty.
+  // Updating list to include Woo keys as "known keys" we might want to warn about if some but not all are present?
+  // For now, let's keep it simple: log warning if standard keys are missing.
+  const requiredKeys = ['shopifyDomain', 'shopifyAPIkey', 'gomagDomain', 'gomagAPIkey', 'wooUrl', 'wooConsumerKey', 'wooConsumerSecret'];
   const missingKeys = requiredKeys.filter(k => !config[k]);
 
   if (missingKeys.length > 0) {

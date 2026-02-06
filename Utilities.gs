@@ -11,9 +11,10 @@
  * Fetches a URL with retry logic for 429 errors and transient failures.
  * @param {string} url - The URL to fetch.
  * @param {Object} options - UrlFetchApp options.
- * @returns {Object|null} Parsed JSON response or null on failure/error.
+ * @param {boolean} returnFullResponse - If true, returns {content: ..., headers: ...}. Default false.
+ * @returns {Object|null} Parsed JSON response (or wrapper) or null on failure/error.
  */
-function fetchUrlWithRetry(url, options) {
+function fetchUrlWithRetry(url, options, returnFullResponse = false) {
   for (let i = 0; i < 3; i++) {
     try {
       const response = UrlFetchApp.fetch(url, options);
@@ -21,7 +22,14 @@ function fetchUrlWithRetry(url, options) {
       const contentText = response.getContentText();
       
       if (code >= 200 && code < 300) {
-        return JSON.parse(contentText);
+        const jsonContent = JSON.parse(contentText);
+        if (returnFullResponse) {
+          return {
+            content: jsonContent,
+            headers: response.getHeaders()
+          };
+        }
+        return jsonContent;
       } else if (code === 429) {
         const retryAfter = response.getHeaders()['Retry-After'] || 5;
         Logger.log(`[API] Rate limit hit. Sleeping for ${retryAfter}s...`);
@@ -29,16 +37,11 @@ function fetchUrlWithRetry(url, options) {
         continue;
       } else {
         Logger.log(`[API ERROR] Code: ${code}. Response: ${contentText}`);
-        // For 4xx/5xx errors that aren't 429, we likely shouldn't retry instantly without checking, 
-        // but for now we follow the improved pattern of logging and returning null or re-throwing if needed.
-        // We'll throw to let the caller decide or just return null. 
-        // Returning null allows the loop to continue or break gracefully.
         return null; 
       }
     } catch (e) {
       if (i === 2) {
         Logger.log(`[FETCH ERROR] ${e.message}`);
-        // throw e; // Uncomment if we want to bubble up the error instead of returning null
         return null;
       }
       Utilities.sleep(2000);
