@@ -1,0 +1,53 @@
+<pre style="font-family: monospace; white-space: pre-wrap;">
+# Orders Data Export Automation
+
+This Google Apps Script project automates the export of order data from Shopify, Gomag, and WooCommerce into a Google Sheet.
+
+## Features
+- **Shopify Export**: Fetches orders from Shopify Admin API.
+- **Gomag Export**: Fetches orders from Gomag API.
+- **WooCommerce Export**: Fetches orders from WooCommerce REST API.
+- **Dynamic Configuration**: Reads API credentials and settings from a "Config" sheet.
+
+## Prerequisites
+- A Google Sheet to host the script.
+- API Credentials for Shopify, Gomag, and WooCommerce.
+
+## Setup
+
+### 1. Create the Config Sheet
+Create a new tab named `Config` with these columns (A=Key, B=Value):
+
+| Key | Description |
+| :--- | :--- |
+| `shopifyDomain` | Your Shopify Admin Domain |
+| `shopifyAPIkey` | Your Shopify Access Token |
+| `gomagDomain` | Your Gomag Shop URL |
+| `gomagAPIkey` | Your Gomag API Key |
+| `wooUrl` | Your WooCommerce Store URL |
+| `wooConsumerKey` | WooCommerce Consumer Key |
+| `wooConsumerSecret` | WooCommerce Consumer Secret |
+| `Days` | Lookback period in days (Default: 30) |
+
+### 2. Script Files
+Ensure these files exist:
+- `Config.gs`
+- `Utilities.gs`
+- `ShopifyOrders.gs`
+- `GomagOrders.gs`
+- `WooCommerceOrders.gs`
+
+## How to Run
+1. Select the function (e.g., `runShopifyOrderExport`, `runGomagOrderExport`, `runWooCommerceOrderExport`).
+2. Click **Run**.
+3. Check the respective output sheet.
+
+## Output Columns
+1. Date
+2. Transaction ID
+3. Value
+4. Shipping
+5. Items Revenue
+6. Product IDs
+7. Status
+</pre>
