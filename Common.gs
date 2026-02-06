@@ -63,6 +63,29 @@ function fetchConfigFromSheet() {
 // ==========================================
 
 /**
+ * Calculates the start and end dates based on a lookback window of N days,
+ * excluding the current day (up to Today 00:00:00).
+ * 
+ * Example:
+ * Today = Feb 06. Days = 1.
+ * endDate = Feb 06 00:00.
+ * startDate = Feb 05 00:00.
+ * Range: [Feb 05, Feb 06) -> covers strictly Feb 05.
+ * 
+ * @param {number} days - Number of days to look back.
+ * @returns {Object} { startDate: Date, endDate: Date }
+ */
+function calculateDateRange(days) {
+  const endDate = new Date();
+  endDate.setHours(0, 0, 0, 0); // Midnight today starts the exclusion zone
+  
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - days); // Go back N days from midnight
+  
+  return { startDate, endDate };
+}
+
+/**
  * Fetches a URL with retry logic for 429 errors and transient failures.
  * @param {string} url - The URL to fetch.
  * @param {Object} options - UrlFetchApp options.

@@ -48,16 +48,13 @@ function runGomagOrderExport() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   
   // 2. Calculate Timeframe
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - GOMAG_EXPORT_CONFIG.timeframeDays);
-  startDate.setHours(0, 0, 0, 0); 
+  const { startDate, endDate } = calculateDateRange(GOMAG_EXPORT_CONFIG.timeframeDays);
   
-  Logger.log(`[GomagExport] Starting export from ${startDate.toISOString()}...`);
+  Logger.log(`[GomagExport] Starting export from ${startDate.toISOString()} to ${endDate.toISOString()}...`);
 
   // 3. Fetch Data
   try {
-    const data = fetchGomagOrdersForExport_(startDate);
+    const data = fetchGomagOrdersForExport_(startDate, endDate);
     
     // 4. Process Data
     const processedRows = data.orders.map(processGomagOrderForExport_);
@@ -203,7 +200,7 @@ function processGomagOrderForExport_(order) {
 // 5. CORE ENGINE (PAGINATION)
 // ==========================================
 
-function fetchGomagOrdersForExport_(startDate) {
+function fetchGomagOrdersForExport_(startDate, endDate) {
   const allOrders = [];
   let page = 1;
   let keepFetching = true;
@@ -268,6 +265,11 @@ function fetchGomagOrdersForExport_(startDate) {
 
       const orderDate = new Date(orderDateStr);
       
+      // Filter out orders that are too new (>= endDate which is Start of Today)
+      if (orderDate >= endDate) {
+         continue; 
+      }
+
       if (orderDate < startDate) {
         keepFetching = false;
         break; 

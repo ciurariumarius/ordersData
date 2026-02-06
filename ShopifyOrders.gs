@@ -49,15 +49,13 @@ function runShopifyOrderExport() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   
   // 2. Calculate Timeframe
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - SHOPIFY_EXPORT_CONFIG.timeframeDays);
+  const { startDate, endDate } = calculateDateRange(SHOPIFY_EXPORT_CONFIG.timeframeDays);
   
-  Logger.log(`[ShopifyExport] Starting export from ${startDate.toISOString()}...`);
+  Logger.log(`[ShopifyExport] Starting export from ${startDate.toISOString()} to ${endDate.toISOString()}...`);
 
   // 3. Fetch Data
   try {
-    const orders = fetchShopifyOrdersForExport_(startDate);
+    const orders = fetchShopifyOrdersForExport_(startDate, endDate);
     
     // 4. Process Data
     const processedRows = orders.map(processOrderForExport_);
@@ -145,10 +143,11 @@ function processOrderForExport_(order) {
 // 4. API HELPERS
 // ==========================================
 
-function fetchShopifyOrdersForExport_(startDate) {
+function fetchShopifyOrdersForExport_(startDate, endDate) {
   const endpoint = `https://${SHOPIFY_EXPORT_CONFIG.domain}/admin/api/${SHOPIFY_EXPORT_CONFIG.apiVersion}/orders.json` +
     `?status=any` + 
     `&created_at_min=${startDate.toISOString()}` +
+    `&created_at_max=${endDate.toISOString()}` +
     `&fields=id,name,created_at,total_price,total_shipping_price_set,line_items,financial_status` + 
     `&limit=250`; 
 

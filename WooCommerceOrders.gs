@@ -56,15 +56,13 @@ function runWooCommerceOrderExport() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   
   // 2. Calculate Timeframe
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - WOO_EXPORT_CONFIG.timeframeDays);
+  const { startDate, endDate } = calculateDateRange(WOO_EXPORT_CONFIG.timeframeDays);
   
-  Logger.log(`[WooExport] Starting export from ${startDate.toISOString()}...`);
+  Logger.log(`[WooExport] Starting export from ${startDate.toISOString()} to ${endDate.toISOString()}...`);
 
   // 3. Fetch Data
   try {
-    const orders = fetchWooOrdersForExport_(startDate);
+    const orders = fetchWooOrdersForExport_(startDate, endDate);
     
     // 4. Process Data
     const processedRows = orders.map(processWooOrderForExport_);
@@ -153,7 +151,7 @@ function processWooOrderForExport_(order) {
 // 4. API HELPERS
 // ==========================================
 
-function fetchWooOrdersForExport_(startDate) {
+function fetchWooOrdersForExport_(startDate, endDate) {
   const allOrders = [];
   let page = 1;
   let keepFetching = true;
@@ -170,7 +168,7 @@ function fetchWooOrdersForExport_(startDate) {
   while (keepFetching) {
     // API v3 is standard for recent Woo versions
     // Order 'desc' is default
-    const url = `${WOO_EXPORT_CONFIG.url}/wp-json/wc/v3/orders?per_page=50&page=${page}&after=${startDate.toISOString()}`;
+    const url = `${WOO_EXPORT_CONFIG.url}/wp-json/wc/v3/orders?per_page=50&page=${page}&after=${startDate.toISOString()}&before=${endDate.toISOString()}`;
     
     Logger.log(`[WooExport] Fetching page ${page}...`);
     
