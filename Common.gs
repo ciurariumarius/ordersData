@@ -159,11 +159,8 @@ function writeParamsToSheet(spreadsheet, sheetName, headers, rows) {
     // Write Data
     sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
     
-    // Auto-detect numeric columns for simple formatting if needed, 
-    // but typically we can format specific known columns from the caller or just leave as auto.
-    // Here we'll apply a standard number format to potential numeric columns (Value, Shipping, Revenue)
-    // assuming they are generally in columns 3, 4, 5 based on current usage.
-    // To be safer, we could just format the whole data range as needed.
+    // Format Date Column (Column 1) to "dd/mm/yyyy"
+    sheet.getRange(2, 1, rows.length, 1).setNumberFormat("dd/mm/yyyy");
     
     // Auto-resize
     sheet.autoResizeColumns(1, headers.length);
